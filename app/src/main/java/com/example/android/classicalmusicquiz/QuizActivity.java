@@ -18,6 +18,8 @@ package com.example.android.classicalmusicquiz;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.content.BroadcastReceiver;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -72,7 +74,7 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
 
     private SimpleExoPlayer exoPlayer;
     private SimpleExoPlayerView playerVIew;
-    private MediaSessionCompat mediaSession;
+    private static MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
     private NotificationManager notificationManager;
 
@@ -395,6 +397,20 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         @Override
         public void onSkipToPrevious() {
             exoPlayer.seekTo(0);
+        }
+    }
+
+    /**
+     * Broadcast Receiver registered to receive the MEDIA_BUTTON intent coming from clients.
+     */
+    public static class MediaReceiver extends BroadcastReceiver {
+
+        public MediaReceiver() {
+        }
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            MediaButtonReceiver.handleIntent(mediaSession, intent);
         }
     }
 }
