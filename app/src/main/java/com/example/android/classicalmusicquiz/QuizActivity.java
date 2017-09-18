@@ -16,6 +16,8 @@
 
 package com.example.android.classicalmusicquiz;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -25,8 +27,10 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.media.session.MediaButtonReceiver;
 import android.support.v4.media.session.MediaSessionCompat;
 import android.support.v4.media.session.PlaybackStateCompat;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -70,6 +74,7 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
     private SimpleExoPlayerView playerVIew;
     private MediaSessionCompat mediaSession;
     private PlaybackStateCompat.Builder stateBuilder;
+    private NotificationManager notificationManager;
 
 
     @Override
@@ -195,6 +200,46 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         }
         return buttons;
     }
+    public void showNotification(PlaybackStateCompat state) {
+        NotificationCompat.Builder builder = new NotificationCompat.Builder(this);
+        int icon;
+        String play_pause;
+        if (state.getState() == PlaybackStateCompat.STATE_PLAYING) {
+            icon = R.drawable.exo_controls_pause;
+            play_pause = "paused";
+        } else {
+            icon = R.drawable.exo_controls_play;
+            play_pause = "playing";
+        }
+
+        NotificationCompat.Action playPauseAction = new NotificationCompat.Action(
+                icon, play_pause,
+                MediaButtonReceiver.buildMediaButtonPendingIntent(this,
+                        PlaybackStateCompat.ACTION_PLAY_PAUSE));
+
+        NotificationCompat.Action restartAction = new android.support.v4.app.NotificationCompat
+                .Action(R.drawable.exo_controls_previous, "restart",
+                MediaButtonReceiver.buildMediaButtonPendingIntent
+                        (this, PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS));
+
+        PendingIntent contentPendingIntent = PendingIntent.getActivity
+                (this, 0, new Intent(this, QuizActivity.class), 0);
+
+        builder.setContentTitle(getString(R.string.guess))
+                .setContentText(getString(R.string.notification_text))
+                .setContentIntent(contentPendingIntent)
+                .setSmallIcon(R.drawable.ic_music_note)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+                .addAction(restartAction)
+                .addAction(playPauseAction)
+                .setStyle(new NotificationCompat.MediaStyle()
+                        .setMediaSession(mediaSession.getSessionToken())
+                        .setShowActionsInCompactView(0,1));
+
+
+        notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(0, builder.build());
+    }
 
 
     /**
@@ -290,6 +335,7 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
      * Release ExoPlayer.
      */
     private void releasePlayer() {
+        notificationManager.cancelAll();
         exoPlayer.stop();
         exoPlayer.release();
         exoPlayer = null;
@@ -319,6 +365,7 @@ public class QuizActivity extends AppCompatActivity implements View.OnClickListe
         }
 
         mediaSession.setPlaybackState(stateBuilder.build());
+        showNotification(stateBuilder.build());
     }
 
     @Override
